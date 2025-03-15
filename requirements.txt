@@ -1,2 +1,4 @@
 flask
 gtts
+pydub
+ffmpeg-python

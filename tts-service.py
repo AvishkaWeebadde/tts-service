@@ -3,6 +3,7 @@ from gtts import gTTS
 import os
 import re
 from pydub import AudioSegment
+import shutil
 
 app = Flask(__name__)
 
@@ -19,6 +20,13 @@ def sanitize_filename(text):
 
 @app.route('/tts', methods=['POST'])
 def text_to_speech():
+
+     # Clear OUTPUT_DIR before processing
+    if os.path.exists(OUTPUT_DIR):
+        shutil.rmtree(OUTPUT_DIR)  # Remove all files
+    os.makedirs(OUTPUT_DIR, exist_ok=True)  # Recreate the directory
+
+
     data = request.json
     text_chunks = data.get('text', [])
     if not text_chunks:
@@ -47,6 +55,7 @@ def text_to_speech():
 def combine_audio():
     data = request.json
     file_paths = data.get('file_paths', [])
+    file_name = data.get('file_name', 'combined_audio')
 
     if not file_paths:
         return jsonify({"error": "No file paths provided"}), 400
@@ -59,11 +68,11 @@ def combine_audio():
                 return jsonify({"error": f"File not found: {file_path}"}), 404
             combined_audio += AudioSegment.from_file(audio_file)
 
-        combined_file_name = "combined_audio.mp3"
+        combined_file_name = file_name + ".mp3"
         combined_file_path = os.path.join(COMBINED_DIR, combined_file_name)
         combined_audio.export(combined_file_path, format="mp3")
 
-        return jsonify({"message": "Audio files combined successfully", "file_path": combined_file_path}), 200
+        return jsonify({"message": "Audio files combined successfully", "file_name": combined_file_name}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
